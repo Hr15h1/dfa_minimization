@@ -1,3 +1,6 @@
 dfa_minimization/*
 dfa_minimization.code-workspace
 .vscode/*
+images/*
+dot_files/*
+automata.py
