@@ -4,3 +4,4 @@ dfa_minimization.code-workspace
 images/*
 dot_files/*
 automata.py
+new_dfa_min/*

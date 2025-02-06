@@ -1,37 +1,53 @@
-from graphviz import Digraph
+from graphviz import Digraph, render
 from datetime import datetime
 from pyformlang.finite_automaton import DeterministicFiniteAutomaton, State, Symbol
 import os
 import inquirer
+from collections import defaultdict
+from PIL import Image
 
-t_table = [[0,1,2], [1,0,2], [1,1,4], [2,1,4], [2,0,1], [3,0,2], [3,1,4], [4,0,4], [4,1,4]]
-# t_table2 = [
-#     [1, 0, 3], [1, 1, 2],
-#     [0, 0, 1], [0, 1, 4],
-#     [2, 0, 5], [2, 1, 6],
-#     [3, 0, 7], [3, 1, 8],
-#     [4, 0, 9], [4, 1, 10],
-#     [5, 0, 11], [5, 1, 12],
-#     [6, 0, 13], [6, 1, 14],
-#     [7, 0, 15], [7, 1, 16],
-#     [8, 0, 17], [8, 1, 18],
-#     [9, 0, 19], [9, 1, 0],
-#     [10, 0, 1], [10, 1, 2],
-#     [11, 0, 3], [11, 1, 4],
-#     [12, 0, 5], [12, 1, 6],
-#     [13, 0, 7], [13, 1, 8],
-#     [14, 0, 9], [14, 1, 10],
-#     [15, 0, 11], [15, 1, 12],
-#     [16, 0, 13], [16, 1, 14],
-#     [17, 0, 15], [17, 1, 16],
-#     [18, 0, 17], [18, 1, 18],
-#     [19, 0, 19], [19, 1, 0],
 
-# ]
-symbols = ['0', '1']
-states = {'q0', 'q1', 'q2', 'q3', 'q4'}
-initial_state = 'q0'
-final_states = {'q4'}
+def get_dfa():
+    
+    states = set(input("Enter the states of the DFA seperated by comma: ").split(','))
+    symbols = set(input("Enter the symbols of the DFA seperated by comma: ").split(','))
+    initial_state = input("Enter the initial state of the DFA: ")
+
+    final_states = set(input("Enter the final states of the DFA seperated by comma: ").split(','))
+
+    t_table = []
+
+    transitions = defaultdict(dict)
+    while True:
+        t = input("Enter the transition table of the DFA in the format 'state, symbol, state' or 'exit' to stop: ")
+        if t.lower() == 'exit':
+            break
+
+        t = t.split(',')
+
+        if len(t) != 3:
+            print("Invalid input!. Make sure that the input is in the format 'state, symbol, state'")
+            continue
+
+        
+        state_from, symbol, state_to = t
+        
+
+        if symbol in transitions[state_from]:
+            print(f"You have already created a transition for this symbol from {state_from} for symbol {symbol} to {transitions[state_from][symbol]}")
+            continue
+
+        t_table.append([state_from, symbol, state_to])
+        transitions[state_from][symbol] = state_to
+
+    is_valid_dfa = all(len(transitions[state]) == len(symbols) for state in states)
+
+    if is_valid_dfa:
+        return states, symbols, initial_state, final_states, t_table
+    else:
+        print("Invalid DFA. Make sure that all states have transitions for all symbols")
+        return get_dfa()
+
 
 def dfa_visualizer(t_table, states, initial_state, final_states):
     g = Digraph()
@@ -47,17 +63,16 @@ def dfa_visualizer(t_table, states, initial_state, final_states):
     g.edge('start', initial_state)
     for t in t_table:
         g.edge(
-            states[t[0]],
-            states[t[2]],
+            t[0],
+            t[2],
             label = f"{t[1]}"
         )
 
     if not os.path.exists('images'):
         os.makedirs('images')
-    g.render(f'dfa_{datetime.now().strftime("%M%S")}', 'images/', format = 'png')
+    path = g.render(f'dfa_{datetime.now().strftime("%M%S")}', 'images/', format = 'png')
 
-dfa_visualizer(t_table, states, initial_state, final_states)
-
+    return path
 
 def automata(states, symbols, initial_state, final_state, t_table):
 
@@ -69,7 +84,7 @@ def automata(states, symbols, initial_state, final_state, t_table):
         state_vars.update({f"state_{state}": State(state)})
         if state == initial_state:
             dfa.add_start_state(state_vars[f"state_{state}"])
-        if state == final_state:
+        if state in final_state:
             dfa.add_final_state(state_vars[f"state_{state}"])
     print(state_vars)
     for symbol in symbols:
@@ -79,18 +94,55 @@ def automata(states, symbols, initial_state, final_state, t_table):
 
 
     for t in t_table:
+        print(t)
         dfa.add_transition(
-            state_vars[f"state_q{t[0]}"],
+            state_vars[f"state_{t[0]}"],
             sym_vars[f"symbol_{t[1]}"],
-            state_vars[f"state_q{t[2]}"]
+            state_vars[f"state_{t[2]}"]
         )   
 
     return dfa
 
-dfa = automata(states, symbols, initial_state, final_states, t_table)
-print(dfa.accepts("110001"))
-print(dfa.to_dict())
+def check_minimization(states, symbols, final_states, t_table):
+    n = len(states)
 
+    states = list(states)
+    final_states = list(final_states)
+
+    transitions = defaultdict(dict)
+
+    table = [[False] * n for _ in range(n)]
+
+    for i in range(n):
+        for j in range(i+1, n):
+            if (states[i] in final_states and states[j] not in final_states) or (states[i] not in final_states and states[j] in final_states):
+                table[i][j] = True
+
+    for t in t_table:
+        state_from, symbol, state_to = t
+        transitions[state_from][symbol] = state_to
+
+    changed = True
+
+    while changed:
+        changed = False
+        for i in range(n):
+            for j in range(i+1, n):
+                if not table[i][j]:
+                    for symbol in symbols:
+                        next_i = states.index(transitions[states[i]][symbol])
+                        next_j = states.index(transitions[states[j]][symbol])
+
+                        if next_i != next_j and table[min(next_i, next_j)][max(next_i, next_j)]:
+                            table[i][j] = True
+                            changed = True
+    
+    for i in range(n):
+        for j in range(i+1, n):
+            if not table[i][j]:
+                return False
+    return True
+                    
 def hopcroft_minimize(dfa: DeterministicFiniteAutomaton):
     transitions = dfa.to_dict()
     
@@ -101,7 +153,6 @@ def hopcroft_minimize(dfa: DeterministicFiniteAutomaton):
 
     P = {frozenset(final_states), frozenset(non_final_states)}
     W = {frozenset(final_states), frozenset(non_final_states)}
-
 
     while W:
         A = W.pop()
@@ -153,3 +204,89 @@ def hopcroft_minimize(dfa: DeterministicFiniteAutomaton):
                 )
 
     return new_dfa
+
+if __name__ == '__main__':
+
+    states = set()
+    symbols = set()
+    initial_state = ""
+    final_states = set()
+    t_table = []
+    minimized_dfa = None
+
+    while True:
+        questions = [
+            inquirer.List(
+                'action',
+                message = 'What would you like to do?',
+                choices = ['Create DFA', 'Display DFA', 'Check Minimization', 'Minimize DFA', 'Test string acceptance', 'View Transition Table', "Exit"]
+            )
+        ]
+        answers = inquirer.prompt(questions)
+
+        match answers['action']:
+            case "Create DFA":
+                states, symbols, initial_state, final_states, t_table = get_dfa()
+                
+                m = f"The DFA you have entered has states - {states},\n accepted symbols - {symbols},\n starting state - {initial_state},\n final states - {final_states},\n and transition function - {t_table}"
+
+                print(m)
+
+            case "Display DFA":
+                print("Creating a visualization of the DFA you have entered...")
+
+                path = dfa_visualizer(t_table, states, initial_state, final_states)
+
+                if path:
+                    img = Image.open(path)
+                    img.show()
+
+                else:
+                    print("An error occured while creating the visualization")
+
+            case "Check Minimization":
+                if check_minimization(states, symbols, final_states, t_table):
+                    print("The DFA is already minimized")
+                else:
+                    print("The DFA is not minimized")
+
+            case "Minimize DFA":
+                dfa = automata(states, symbols, initial_state, final_states, t_table)
+                minimized_dfa = hopcroft_minimize(dfa)
+                c = input("Do you want to visualize the minimized DFA? (y/n): ")
+                if c.lower() == 'y':
+                    minimized_dfa.write_as_dot(f"minimized_dfa_{datetime.now().strftime('%M%S')}.dot")
+                    render('dot', 'png', f"minimized_dfa_{datetime.now().strftime('%M%S')}.dot")
+                    img = Image.open(f"minimized_dfa_{datetime.now().strftime('%M%S')}.dot.png")
+                    img.show()
+                else:
+                    print("Minimized DFA created")
+                    print(minimized_dfa.to_dict())
+
+            case "Test string acceptance":
+                dfa = automata(states, symbols, initial_state, final_states, t_table)
+                print(dfa.to_dict())
+                s = str(input("Enter the string you want to test: "))
+                ac = dfa.accepts(s)
+                print(ac)
+                if ac:
+                    print(f"The DFA accepts the string {s}")
+                else:
+                    print(f"The DFA does not accept the string {s}")
+
+            case "View Transition Table":
+                print(f"The transition table of the DFA you have entered is: {t_table}")
+                if minimized_dfa:
+                    print(f"And the transition table of the minimized DFA is: {minimized_dfa.to_dict()}")
+            
+            case "Exit":
+                print("Exiting...")
+                exit(0)
+
+
+
+                    
+
+                
+
+
