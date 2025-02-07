@@ -287,13 +287,13 @@ if __name__ == '__main__':
                 states, symbols, initial_state, final_states, t_table = get_dfa()
                 
                 m = f"The DFA you have entered has states - {states},\n accepted symbols - {symbols},\n starting state - {initial_state},\n final states - {final_states},\n and transition function - {t_table}"
-
                 print(m)
+                print()
 
             #Display the DFA
             case "Display DFA":
                 print("Creating a visualization of the DFA you have entered...")
-
+                print()
                 path = dfa_visualizer(t_table, states, initial_state, final_states)
 
                 if path:
@@ -306,9 +306,11 @@ if __name__ == '__main__':
             #Check if the DFA is minimized
             case "Check Minimization":
                 if check_minimization(states, symbols, final_states, t_table):
-                    print("The DFA is already minimized")
+                    print("The DFA is already minimized.")
+                    print()
                 else:
-                    print("The DFA is not minimized")
+                    print("The DFA is not minimized.")
+                    print()
 
             #Minimize the DFA
             case "Minimize DFA":
@@ -322,25 +324,34 @@ if __name__ == '__main__':
                     render('dot', 'png', file_name)
                     img = Image.open(image_filename)
                     img.show()
+                    print()
                 else:
                     print("Minimized DFA created")
                     print(minimized_dfa.to_dict())
+                    print()
 
             #Test string acceptance
             case "Test string acceptance":
-                dfa = automata(states, symbols, initial_state, final_states, t_table)
+                if minimized_dfa is not None:
+                    dfa = minimized_dfa
+                else:  
+                    dfa = automata(states, symbols, initial_state, final_states, t_table)
                 s = str(input("Enter the string you want to test: "))
                 ac = dfa.accepts(s)
                 if ac:
-                    print(f"The DFA accepts the string {s}")
+                    print(f"The DFA accepts the string {s}.")
+                    print()
                 else:
-                    print(f"The DFA does not accept the string {s}")
+                    print(f"The DFA does not accept the string {s}.")
+                    print()
 
             #View the transition table
             case "View Transition Table":
                 print(f"The transition table of the DFA you have entered is: {t_table}")
+                print()
                 if minimized_dfa is not None:
                     print(f"And the transition table of the minimized DFA is: {minimized_dfa.to_dict()}")
+                    print()
             
             #Exit the program
             case "Exit":
