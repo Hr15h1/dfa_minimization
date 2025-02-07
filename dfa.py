@@ -6,7 +6,10 @@ import inquirer
 from collections import defaultdict
 from PIL import Image
 
-
+#This function is for getting the DFA from the user
+#It takes the states, symbols, initial state, final states and the transition table as input
+#It also checks if the DFA is valid
+#It returns the states, symbols, initial state, final states and the transition table, if the DFA is valid
 def get_dfa():
     
     states = set(input("Enter the states of the DFA seperated by comma: ").split(','))
@@ -29,10 +32,8 @@ def get_dfa():
             print("Invalid input!. Make sure that the input is in the format 'state, symbol, state'")
             continue
 
-        
         state_from, symbol, state_to = t
         
-
         if symbol in transitions[state_from]:
             print(f"You have already created a transition for this symbol from {state_from} for symbol {symbol} to {transitions[state_from][symbol]}")
             continue
@@ -49,6 +50,10 @@ def get_dfa():
         return get_dfa()
 
 
+#This function is for creating a visualization of the DFA
+#It takes the transition table, states, initial state and final states as input
+#It creates a visualization of the DFA and saves it as a png file
+#It returns the path of the image
 def dfa_visualizer(t_table, states, initial_state, final_states):
     g = Digraph()
     g.attr(rankdir = 'LR')
@@ -74,6 +79,9 @@ def dfa_visualizer(t_table, states, initial_state, final_states):
 
     return path
 
+#This function is for creating the DFA from the states, symbols, initial state, final states and the transition table
+#It creates the DFA using the pyformlang library
+#It returns the DFA
 def automata(states, symbols, initial_state, final_state, t_table):
 
     dfa = DeterministicFiniteAutomaton()
@@ -103,6 +111,10 @@ def automata(states, symbols, initial_state, final_state, t_table):
 
     return dfa
 
+#This function is for checking if the DFA is minimized
+#It takes the states, symbols, final states and the transition table as input
+#This function checks if the DFA is minimized using the table filling algorithm
+#It returns True if the DFA is minimized and False otherwise
 def check_minimization(states, symbols, final_states, t_table):
     n = len(states)
 
@@ -143,6 +155,10 @@ def check_minimization(states, symbols, final_states, t_table):
                 return False
     return True
                     
+#This function is for minimizing the DFA
+#It takes the DFA as input
+#It minimizes the DFA using the Hopcroft's algorithm
+#It returns the minimized DFA
 def hopcroft_minimize(dfa: DeterministicFiniteAutomaton):
     transitions = dfa.to_dict()
     
@@ -205,6 +221,12 @@ def hopcroft_minimize(dfa: DeterministicFiniteAutomaton):
 
     return new_dfa
 
+#This is the main function
+#Menu driven program for creating, visualizing, minimizing and testing a DFA
+#It uses the pyformlang library for creating and minimizing the DFA
+#It uses the graphviz library for visualizing the DFA
+#It uses the inquirer library for creating the menu
+#It uses the PIL library for displaying the image
 if __name__ == '__main__':
 
     states = set()
@@ -225,6 +247,8 @@ if __name__ == '__main__':
         answers = inquirer.prompt(questions)
 
         match answers['action']:
+
+            #Create the DFA
             case "Create DFA":
                 states, symbols, initial_state, final_states, t_table = get_dfa()
                 
@@ -232,6 +256,7 @@ if __name__ == '__main__':
 
                 print(m)
 
+            #Display the DFA
             case "Display DFA":
                 print("Creating a visualization of the DFA you have entered...")
 
@@ -244,12 +269,14 @@ if __name__ == '__main__':
                 else:
                     print("An error occured while creating the visualization")
 
+            #Check if the DFA is minimized
             case "Check Minimization":
                 if check_minimization(states, symbols, final_states, t_table):
                     print("The DFA is already minimized")
                 else:
                     print("The DFA is not minimized")
 
+            #Minimize the DFA
             case "Minimize DFA":
                 dfa = automata(states, symbols, initial_state, final_states, t_table)
                 minimized_dfa = hopcroft_minimize(dfa)
@@ -263,6 +290,7 @@ if __name__ == '__main__':
                     print("Minimized DFA created")
                     print(minimized_dfa.to_dict())
 
+            #Test string acceptance
             case "Test string acceptance":
                 dfa = automata(states, symbols, initial_state, final_states, t_table)
                 print(dfa.to_dict())
@@ -274,19 +302,14 @@ if __name__ == '__main__':
                 else:
                     print(f"The DFA does not accept the string {s}")
 
+            #View the transition table
             case "View Transition Table":
                 print(f"The transition table of the DFA you have entered is: {t_table}")
                 if minimized_dfa:
                     print(f"And the transition table of the minimized DFA is: {minimized_dfa.to_dict()}")
             
+            #Exit the program
             case "Exit":
                 print("Exiting...")
                 exit(0)
-
-
-
-                    
-
                 
-
-
