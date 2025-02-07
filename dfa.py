@@ -12,34 +12,73 @@ from PIL import Image
 #It returns the states, symbols, initial state, final states and the transition table, if the DFA is valid
 def get_dfa():
     
-    states = set(input("Enter the states of the DFA seperated by comma: ").split(','))
-    symbols = set(input("Enter the symbols of the DFA seperated by comma: ").split(','))
-    initial_state = input("Enter the initial state of the DFA: ")
-
-    final_states = set(input("Enter the final states of the DFA seperated by comma: ").split(','))
-
-    t_table = []
+    questions = [
+            inquirer.List(
+                'action',
+                message = 'How would you like to input the DFA?',
+                choices = ["Through terminal", "text file"]
+            )
+        ]
+    answers = inquirer.prompt(questions)
 
     transitions = defaultdict(dict)
-    while True:
-        t = input("Enter the transition table of the DFA in the format 'state, symbol, state' or 'exit' to stop: ")
-        if t.lower() == 'exit':
-            break
 
-        t = t.split(',')
+    if answers['action'] == "Through terminal":
+        states = set(input("Enter the states of the DFA seperated by comma: ").split(','))
+        symbols = set(input("Enter the symbols of the DFA seperated by comma: ").split(','))
+        initial_state = input("Enter the initial state of the DFA: ")
 
-        if len(t) != 3:
-            print("Invalid input!. Make sure that the input is in the format 'state, symbol, state'")
-            continue
+        final_states = set(input("Enter the final states of the DFA seperated by comma: ").split(','))
 
-        state_from, symbol, state_to = t
-        
-        if symbol in transitions[state_from]:
-            print(f"You have already created a transition for this symbol from {state_from} for symbol {symbol} to {transitions[state_from][symbol]}")
-            continue
+        t_table = []
+        while True:
+            t = input("Enter the transition table of the DFA in the format 'state, symbol, state' or 'exit' to stop: ")
+            if t.lower() == 'exit':
+                break
 
-        t_table.append([state_from, symbol, state_to])
-        transitions[state_from][symbol] = state_to
+            t = t.split(',')
+
+            if len(t) != 3:
+                print("Invalid input!. Make sure that the input is in the format 'state, symbol, state'")
+                continue
+
+            state_from, symbol, state_to = t
+            
+            if symbol in transitions[state_from]:
+                print(f"You have already created a transition for this symbol from {state_from} for symbol {symbol} to {transitions[state_from][symbol]}")
+                continue
+
+            t_table.append([state_from, symbol, state_to])
+            transitions[state_from][symbol] = state_to
+
+    else:
+        file_name = str(input("Enter file name (Must be a text file): "))
+        with open (file_name, 'r') as f:
+            lines = f.readlines()
+
+            t_table = []
+
+            for t in lines[:-4]:
+                t = t[:-1].split(',')
+                
+                if len(t) != 3:
+                    print(f"Found mistake in line {lines.index(t)} of the text file {file_name}. Please correct it!")
+                    exit(0)
+
+                state_from, symbol, state_to = t
+
+                if symbol in transitions[state_from]:
+                    print(f"You have already created a transition for this symbol from {state_from} for symbol {symbol} to {transitions[state_from][symbol]}")
+                    continue
+            
+                t_table.append([state_from, symbol, state_to])
+                transitions[state_from][symbol] = state_to
+
+            states = set(lines[-4].strip().split(','))
+            symbols = set(lines[-3].strip().split(','))
+            initial_state = lines[-2].strip().split(',')[0]
+            final_states = set(lines[-1].strip().split(','))
+
 
     is_valid_dfa = all(len(transitions[state]) == len(symbols) for state in states)
 
@@ -87,22 +126,17 @@ def automata(states, symbols, initial_state, final_state, t_table):
     dfa = DeterministicFiniteAutomaton()
     state_vars = {}
     sym_vars = {}
-    print(states)
+
     for state in states:
         state_vars.update({f"state_{state}": State(state)})
         if state == initial_state:
             dfa.add_start_state(state_vars[f"state_{state}"])
         if state in final_state:
             dfa.add_final_state(state_vars[f"state_{state}"])
-    print(state_vars)
     for symbol in symbols:
         sym_vars.update({f"symbol_{symbol}": Symbol(symbol)})
 
-    print(sym_vars)
-
-
     for t in t_table:
-        print(t)
         dfa.add_transition(
             state_vars[f"state_{t[0]}"],
             sym_vars[f"symbol_{t[1]}"],
@@ -283,8 +317,10 @@ if __name__ == '__main__':
                 c = input("Do you want to visualize the minimized DFA? (y/n): ")
                 if c.lower() == 'y':
                     minimized_dfa.write_as_dot(f"minimized_dfa_{datetime.now().strftime('%M%S')}.dot")
-                    render('dot', 'png', f"minimized_dfa_{datetime.now().strftime('%M%S')}.dot")
-                    img = Image.open(f"minimized_dfa_{datetime.now().strftime('%M%S')}.dot.png")
+                    file_name = f"minimized_dfa_{datetime.now().strftime('%M%S')}.dot"
+                    image_filename = f"minimized_dfa_{datetime.now().strftime('%M%S')}.dot.png"
+                    render('dot', 'png', file_name)
+                    img = Image.open(image_filename)
                     img.show()
                 else:
                     print("Minimized DFA created")
@@ -293,10 +329,8 @@ if __name__ == '__main__':
             #Test string acceptance
             case "Test string acceptance":
                 dfa = automata(states, symbols, initial_state, final_states, t_table)
-                print(dfa.to_dict())
                 s = str(input("Enter the string you want to test: "))
                 ac = dfa.accepts(s)
-                print(ac)
                 if ac:
                     print(f"The DFA accepts the string {s}")
                 else:
@@ -305,7 +339,7 @@ if __name__ == '__main__':
             #View the transition table
             case "View Transition Table":
                 print(f"The transition table of the DFA you have entered is: {t_table}")
-                if minimized_dfa:
+                if minimized_dfa is not None:
                     print(f"And the transition table of the minimized DFA is: {minimized_dfa.to_dict()}")
             
             #Exit the program
