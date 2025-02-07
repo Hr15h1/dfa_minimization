@@ -333,6 +333,7 @@ if __name__ == '__main__':
             #Test string acceptance
             case "Test string acceptance":
                 if minimized_dfa is not None:
+                    print("The program will use the new minimized DFA")
                     dfa = minimized_dfa
                 else:  
                     dfa = automata(states, symbols, initial_state, final_states, t_table)
