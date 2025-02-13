@@ -5,6 +5,7 @@ import os
 import inquirer
 from collections import defaultdict
 from PIL import Image
+from tabulate import tabulate
 
 #This function is for getting the DFA from the user
 #It takes the states, symbols, initial state, final states and the transition table as input
@@ -348,11 +349,23 @@ if __name__ == '__main__':
 
             #View the transition table
             case "View Transition Table":
-                print(f"The transition table of the DFA you have entered is: {t_table}")
+                print(f"The transition table of the DFA you have entered is:")
                 print()
+                t_dict = dfa.to_dict()
+                t_table_form = []
+                for state, transitions in t_dict.items():
+                    for input_val, next_state in transitions.items():
+                        t_table_form.append([state.value, input_val.value, next_state.value])
+                print(tabulate(t_table_form, headers = ['Start state', 'Symbol', 'End state'], colalign = ['center', 'center', 'center'], tablefmt='rounded_grid'))
                 if minimized_dfa is not None:
                     print(f"And the transition table of the minimized DFA is: {minimized_dfa.to_dict()}")
                     print()
+                    t_dict = minimized_dfa.to_dict()
+                    t_table_form = []
+                    for state, transitions in t_dict.items():
+                        for input_val, next_state in transitions.items():
+                            t_table_form.append([state.value, input_val.value, next_state.value])
+                    print(tabulate(t_table_form, headers = ['Start state', 'Symbol', 'End state'], colalign = ['center', 'center', 'center'], tablefmt='rounded_grid'))
             
             #Exit the program
             case "Exit":

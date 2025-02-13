@@ -5,3 +5,4 @@ images/*
 dot_files/*
 automata.py
 new_dfa_min/*
+test.py
