@@ -358,7 +358,7 @@ if __name__ == '__main__':
                         t_table_form.append([state.value, input_val.value, next_state.value])
                 print(tabulate(t_table_form, headers = ['Start state', 'Symbol', 'End state'], colalign = ['center', 'center', 'center'], tablefmt='rounded_grid'))
                 if minimized_dfa is not None:
-                    print(f"And the transition table of the minimized DFA is: {minimized_dfa.to_dict()}")
+                    print(f"And the transition table of the minimized DFA is:")
                     print()
                     t_dict = minimized_dfa.to_dict()
                     t_table_form = []
