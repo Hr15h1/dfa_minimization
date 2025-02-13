@@ -206,18 +206,24 @@ def hopcroft_minimize(dfa: DeterministicFiniteAutomaton):
     W = {frozenset(final_states), frozenset(non_final_states)}
 
     while W:
+        # print(f"W = {W}")
         A = W.pop()
+        # print(f"A = {A}")
 
         for symbol in symbols:
-
-            X = {state for state in transitions if symbol in transitions[state] and transitions[state][symbol] in A}
+            # print(f"symbol = {symbol}")
             
+            X = {state for state in transitions if symbol in transitions[state] and transitions[state][symbol] in A}
+            # print(f"X = {X}")
             new_P = set()
 
             for Y in P:
+                # print(f"Y = {Y}")
 
                 intersect = X & Y
+                # print(f"Intersect = {intersect}")
                 difference = Y - X
+                # print(f"difference = {difference}")
 
                 if intersect and difference:
                     new_P.update([frozenset(intersect), frozenset(difference)])
@@ -227,6 +233,7 @@ def hopcroft_minimize(dfa: DeterministicFiniteAutomaton):
                         W.update([frozenset(intersect), frozenset(difference)])
                     else:
                         W.add(frozenset(intersect) if len(intersect) <= len(difference) else frozenset(difference))
+                    # print(f"updated W = {W}")
                 
                 else:
                     new_P.add(Y)
@@ -276,7 +283,7 @@ if __name__ == '__main__':
             inquirer.List(
                 'action',
                 message = 'What would you like to do?',
-                choices = ['Create DFA', 'Display DFA', 'Check Minimization', 'Minimize DFA', 'Test string acceptance', 'View Transition Table', "Exit"]
+                choices = ['Input DFA', 'Display DFA', 'Check Minimization', 'Minimize DFA', 'Create DFA & Test string acceptance', 'View Transition Table', "Exit"]
             )
         ]
         answers = inquirer.prompt(questions)
@@ -284,7 +291,7 @@ if __name__ == '__main__':
         match answers['action']:
 
             #Create the DFA
-            case "Create DFA":
+            case "Input DFA":
                 states, symbols, initial_state, final_states, t_table = get_dfa()
                 
                 m = f"The DFA you have entered has states - {states},\n accepted symbols - {symbols},\n starting state - {initial_state},\n final states - {final_states},\n and transition function - {t_table}"
@@ -332,7 +339,7 @@ if __name__ == '__main__':
                     print()
 
             #Test string acceptance
-            case "Test string acceptance":
+            case "Create DFA & Test string acceptance":
                 if minimized_dfa is not None:
                     print("The program will use the new minimized DFA")
                     dfa = minimized_dfa
